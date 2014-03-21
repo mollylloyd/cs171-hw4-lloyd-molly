@@ -1,6 +1,7 @@
 /**
  * Created by hen on 3/8/14.
  */
+var centered;
 
 var margin = {
     top: 50,
@@ -67,13 +68,38 @@ d3.json("../data/us-named.json", function(error, data) {
     var usMap = topojson.feature(data,data.objects.states).features
     console.log(usMap);
 
-    //svg.selectAll(".country").data(usMap).enter().... 
+    svg.selectAll(".country")
+    	.data(usMap).enter().append("path").attr("d", path)
+    	.on("click", clicked);
     // see also: http://bl.ocks.org/mbostock/4122298
 
     loadStats();
 });
 
+function clicked(d) {
+  var x, y, k;
 
+  if (d && centered !== d) {
+    var centroid = path.centroid(d);
+    x = centroid[0];
+    y = centroid[1];
+    k = 4;
+    centered = d;
+  } else {
+    x = width / 2;
+    y = height / 2;
+    k = 1;
+    centered = null;
+  }
+
+  svg.selectAll("path")
+      .classed("active", centered && function(d) { return d === centered; });
+
+  svg.transition()
+      .duration(750)
+      .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")scale(" + k + ")translate(" + -x + "," + -y + ")")
+      .style("stroke-width", 1.5 / k + "px");
+}
 
 // ALL THESE FUNCTIONS are just a RECOMMENDATION !!!!
 var createDetailVis = function(){
