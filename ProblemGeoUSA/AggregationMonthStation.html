@@ -7,7 +7,7 @@
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="http://d3js.org/queue.v1.min.js"></script>
 <script src="http://d3js.org/topojson.v1.min.js"></script>
-<script type="text/javascript" src="../jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../libs/jquery-1.11.0.min.js"></script>
 <script src="../libs/FileSaver.js"></script>
 
 <div id="vis"></div>
@@ -17,26 +17,54 @@
 
 
     d3.json("../data/allData2003_2004.json",function(error,data){
-        console.log(data);
+       
 
         var allDates = [];
+        var usafId = [];
         var timeParser = d3.time.format("%b %-d, %Y %X %p");
-        
-		// add your source code
+        var  datesFull = [];
+        var hourly = {};
+		intDataSet = {};
+		
+		console.log("merp");
+		
 
+		
+		$.each(data, function(index, value) {
+			if (index == "690150"){
+				//console.log(value.length);
+				value.map(function(d,i){
+					for (j=0;j<24;j++){
+						var total = 0;
+						for (i=0; i < value.length; i++){
+							if (timeParser.parse(d.date).getHours()==j) {
+								total = total + d.value;
+							}
+						}
+					}
+					//console.log(j +": "+ total);
+				})
+				
+			} //closes if index=="690150"
+		}); //closes .each
+					
+		
+			
         saveToFile(reducedDataSet,"reducedMonthStationHour2003_2004.json")
 
 
 
-    })
+    });
 
     var saveToFile = function(object, filename){
-        var blob, blobText;
+       /*
+ var blob, blobText;
         blobText = [JSON.stringify(object)];
         blob = new Blob(blobText, {
             type: "text/plain;charset=utf-8"
         });
         saveAs(blob, filename);
+*/
     }
 
 
