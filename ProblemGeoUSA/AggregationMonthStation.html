@@ -22,33 +22,38 @@
         var allDates = [];
         var usafId = [];
         var timeParser = d3.time.format("%b %-d, %Y %X %p");
-        var  datesFull = [];
-        var hourly = {};
-		intDataSet = {};
-		
-		console.log("merp");
-		
-
+        var reducedDataSet = {};
+        var total = [];
+        var code = [];
+        //console.log(data);
+        
+   
 		
 		$.each(data, function(index, value) {
-			if (index == "690150"){
-				//console.log(value.length);
-				value.map(function(d,i){
+            code.push(index);
+			if (index == code[0]){ 
+				var sum = 0;
+                for (i=0;i<value.length;i++){
+                    sum = sum + value[i].value;
+                }
+                   
+                reducedDataSet[index] = {"sum": sum, "hourly":{}};
 					for (j=0;j<24;j++){
-						var total = 0;
-						for (i=0; i < value.length; i++){
-							if (timeParser.parse(d.date).getHours()==j) {
-								total = total + d.value;
-							}
-						}
-					}
-					//console.log(j +": "+ total);
-				})
+						total[j] = 0;
+						  for (k=0;k<value.length;k++) {
+						  if (timeParser.parse(value.date).getHours()==j) {
+							 total[j] = total[j] + value[k].value;
+							 }
+                        }
+                    }
+				
+				//console.log(total);
 				
 			} //closes if index=="690150"
 		}); //closes .each
 					
-		
+		console.log(code[0]);
+        console.log(reducedDataSet);
 			
         saveToFile(reducedDataSet,"reducedMonthStationHour2003_2004.json")
 
