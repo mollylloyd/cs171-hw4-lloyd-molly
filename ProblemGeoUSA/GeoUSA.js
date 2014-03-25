@@ -40,24 +40,29 @@ var path = d3.geo.path().projection(projection);
 
 
 var dataSet = {};
+var stations = {};
 
 
 
 function loadStations() {
-    d3.csv("../data/NSRDB_StationsMeta.csv",function(error,data){
-        //....
+    d3.csv("../data/stations.csv",function(error,data){
+        data.forEach(function(d,i){
+          stations[d.USAF] = {"lat": d.ISH_LAT, "lon": d.ISH_LON};
+        });
+        //console.log(stations);
     });
 }
 
-
+//loadStations(console.log(stations));
 function loadStats() {
 
     d3.json("../data/reducedMonthStationHour2003_2004.json", function(error,data){
-        completeDataSet= data;
-
+        dataSet = data;
+        //console.log(dataSet);
 		//....
 		
         loadStations();
+        console.log(stations);
     })
 
 }
@@ -66,7 +71,7 @@ function loadStats() {
 d3.json("../data/us-named.json", function(error, data) {
 
     var usMap = topojson.feature(data,data.objects.states).features
-    console.log(usMap);
+   // console.log(usMap);
 
     svg.selectAll(".country")
     	.data(usMap).enter().append("path").attr("d", path)
@@ -74,8 +79,11 @@ d3.json("../data/us-named.json", function(error, data) {
     // see also: http://bl.ocks.org/mbostock/4122298
 
     loadStats();
+
+
 });
 
+//zooming function
 function clicked(d) {
   var x, y, k;
 
