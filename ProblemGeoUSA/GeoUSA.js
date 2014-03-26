@@ -49,7 +49,7 @@ var loadStats;
     d3.csv("../data/stations.csv",function(error,data){
         data.forEach(function(d,i){
           //stations.push(d.USAF);
-          dataSet[d.USAF] = {"lat": +d.ISH_LAT, "lon": +d.ISH_LON, "sum": 0, "hourly":{} };
+          dataSet[d.USAF] = {"lat": +d.ISH_LAT, "lon": +d.ISH_LON, "sum": "", "hourly":{} };
         });
 
       return loadStats();  
@@ -71,6 +71,8 @@ function loadStats() {
 
 };
 
+var dataArray = [];
+
 function loadMap() {
 d3.json("../data/us-named.json", function(error, data) {
 
@@ -81,20 +83,24 @@ d3.json("../data/us-named.json", function(error, data) {
     	.data(usMap).enter().append("path").attr("d", path)
     	.on("click", clicked);
 
+
+
       $.each(dataSet, function(index, value){
-        console.log(value);
+          if (value.sum != ""){
+          dataArray.push({"lat":value.lat,"lon": value.lon, "code": index, "sum":value.sum, "hourly":value.hourly});
+          };
       })
 
-// console.log(dataSet);
-// svg.selectAll(".dot")
-//   .data(dataSet)
-//   .enter()
-//   .append("circle",".dot").attr("r", 5)
-//   .attr("transform", function(d) { for(i=0;i<d)
-//     return "translate(" + projectionCircles([d[i].lon, d[i].lat])+")";
-//   });
+console.log(dataArray[0].lon);
 
-//       //console.log(dataSet[690150].lat);
+svg.selectAll(".dot")
+   .data(dataArray)
+   .enter()
+   .append("circle",".dot").attr("r", 1)
+   .attr("transform", function(d){return "translate(" + projection([d.lon, d.lat])+")"});
+  
+
+      //console.log(dataSet[690150].lat);
 })
 
 };
