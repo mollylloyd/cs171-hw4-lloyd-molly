@@ -40,34 +40,38 @@ var path = d3.geo.path().projection(projection);
 
 
 var dataSet = {};
-var stations = {};
+var stations = [];
+var loadStats;
 
 
-
-function loadStations() {
+//function loadStations() {
     d3.csv("../data/stations.csv",function(error,data){
         data.forEach(function(d,i){
-          stations[d.USAF] = {"lat": d.ISH_LAT, "lon": d.ISH_LON};
+          //stations.push(d.USAF);
+          dataSet[d.USAF] = {"lat": +d.ISH_LAT, "lon": +d.ISH_LON, "sum": 0, "hourly":{} };
         });
-        //console.log(stations);
-    });
-}
 
+      return loadStats();  
+    });
+//};
+var loadMap;
 //loadStations(console.log(stations));
 function loadStats() {
-
     d3.json("../data/reducedMonthStationHour2003_2004.json", function(error,data){
-        dataSet = data;
-        //console.log(dataSet);
-		//....
-		
-        loadStations();
-        console.log(stations);
-    })
+       $.each(data, function(index, value){
+        stations.push(index);
+       });
+       for (i=0; i<stations.length; i++) {
+          dataSet[stations[i]].hourly = data[stations[i]].hourly;
+          dataSet[stations[i]].sum = data[stations[i]].sum;
+       };
+       console.log(dataSet);
+       return loadMap();
+    });
 
-}
+};
 
-
+function loadMap() {
 d3.json("../data/us-named.json", function(error, data) {
 
     var usMap = topojson.feature(data,data.objects.states).features
@@ -76,12 +80,10 @@ d3.json("../data/us-named.json", function(error, data) {
     svg.selectAll(".country")
     	.data(usMap).enter().append("path").attr("d", path)
     	.on("click", clicked);
-    // see also: http://bl.ocks.org/mbostock/4122298
+  console.log(dataSet);
+})
 
-    loadStats();
-
-
-});
+};
 
 //zooming function
 function clicked(d) {
