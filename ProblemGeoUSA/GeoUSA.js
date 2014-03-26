@@ -35,9 +35,10 @@ var svg = canvas.append("g").attr({
     });
 
 
-var projection = d3.geo.albersUsa().translate([width / 2, height / 2]);//.precision(.1);
+var projection = d3.geo.albersUsa().translate([width / 2, height / 2]);
+var projectionCircles = d3.geo.albersUsa();//.precision(.1);
 var path = d3.geo.path().projection(projection);
-
+var pathCircles = d3.geo.path().projection(projectionCircles);
 
 var dataSet = {};
 var stations = [];
@@ -65,8 +66,7 @@ function loadStats() {
           dataSet[stations[i]].hourly = data[stations[i]].hourly;
           dataSet[stations[i]].sum = data[stations[i]].sum;
        };
-       console.log(dataSet);
-       return loadMap();
+       return loadMap(); 
     });
 
 };
@@ -80,7 +80,21 @@ d3.json("../data/us-named.json", function(error, data) {
     svg.selectAll(".country")
     	.data(usMap).enter().append("path").attr("d", path)
     	.on("click", clicked);
-  console.log(dataSet);
+
+      $.each(dataSet, function(index, value){
+        console.log(value);
+      })
+
+// console.log(dataSet);
+// svg.selectAll(".dot")
+//   .data(dataSet)
+//   .enter()
+//   .append("circle",".dot").attr("r", 5)
+//   .attr("transform", function(d) { for(i=0;i<d)
+//     return "translate(" + projectionCircles([d[i].lon, d[i].lat])+")";
+//   });
+
+//       //console.log(dataSet[690150].lat);
 })
 
 };
