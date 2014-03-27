@@ -10,7 +10,7 @@ var margin = {
     left: 50
 };
 
-var width = 1060 - margin.left - margin.right;
+var width = 800 - margin.left - margin.right;
 var height = 800 - margin.bottom - margin.top;
 
 var bbVis = {
@@ -20,15 +20,35 @@ var bbVis = {
     h: 300
 };
 
+bbDetail = {
+    x: 800,
+    y: 100,
+    w: 500,
+    h: 200
+};
+
 var detailVis = d3.select("#detailVis").append("svg").attr({
-    width:350,
-    height:200
-})
+    width:500,
+    height:300
+}).append("g")
+          .attr("class","detail")
+          .attr("height",bbVis.h)
+          .attr("transform","translate(70,50)")
+
+
+
+var xScaleDetail = d3.scale.ordinal().rangeRoundBands([0, bbVis.w], 0.1);
+var yScaleDetail = d3.scale.linear().range([bbVis.h,0]);
+
+var xAxis = d3.svg.axis().scale(xScaleDetail).orient("bottom");
+var yAxis = d3.svg.axis().scale(yScaleDetail).orient("left");
 
 var canvas = d3.select("#vis").append("svg").attr({
     width: width + margin.left + margin.right,
     height: height + margin.top + margin.bottom
     })
+
+
 
 var svg = canvas.append("g").attr({
         transform: "translate(" + margin.left + "," + margin.top + ")"
@@ -48,8 +68,8 @@ var loadStats;
 //function loadStations() {
     d3.csv("../data/stations.csv",function(error,data){
         data.forEach(function(d,i){
-          //stations.push(d.USAF);
-          dataSet[d.USAF] = {"lat": +d.ISH_LAT, "lon": +d.ISH_LON, "sum": "", "hourly":{} };
+          if (i==1) {console.log(d);};
+          dataSet[d.USAF] = {"lat": +d.ISH_LAT, "lon": +d.ISH_LON, "sum": "", "hourly":{}, "station": d.STATION, "state":d.ST};
         });
 
       return loadStats();  
@@ -66,14 +86,16 @@ function loadStats() {
           dataSet[stations[i]].hourly = data[stations[i]].hourly;
           dataSet[stations[i]].sum = data[stations[i]].sum;
        };
-       return loadMap(); 
+       return createVis(); 
     });
 
 };
 
 var dataArray = [];
 
-function loadMap() {
+var clickedCity;
+
+function createVis() {
 d3.json("../data/us-named.json", function(error, data) {
 
     var usMap = topojson.feature(data,data.objects.states).features
@@ -86,20 +108,45 @@ d3.json("../data/us-named.json", function(error, data) {
 
 
       $.each(dataSet, function(index, value){
-          if (value.sum != ""){
-          dataArray.push({"lat":value.lat,"lon": value.lon, "code": index, "sum":value.sum, "hourly":value.hourly});
-          };
+          //if (value.sum != ""){
+          dataArray.push({"lat":value.lat,"lon": value.lon, "code": index, "sum":value.sum, "hourly":value.hourly, "station":value.station, "state":value.state});
+          //};
       })
 
-console.log(dataArray[0].lon);
+var radiusScale = d3.scale.linear().range([0,6]).domain([0, d3.max(dataArray.map(function(d){return d.sum;}))]);
+
+function toTitleCase(str)
+{
+    return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+;}
+
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([-10, 0])
+  .html(function(d) {
+    return "Station: <span style='color:lightgrey'>" + toTitleCase(d.station) + ", " +d.state+ "</span>" +  
+          "<br/> Total Solar Radiation: <span style='color:lightgrey'>" + d.sum + "</span>" + " Wh/m" + "<sup>2</sup";
+  })
+
+  svg.call(tip);
+
+
 
 svg.selectAll(".dot")
    .data(dataArray)
    .enter()
-   .append("circle",".dot").attr("r", 1)
-   .attr("transform", function(d){return "translate(" + projection([d.lon, d.lat])+")"});
-  
-
+   .append("circle",".dot")
+   .attr("r", function(d){ 
+                                        if (d.sum == "") {return 0.5;} 
+                                        else {return radiusScale(d.sum)}})
+   .attr("transform", function(d){return "translate(" + projection([d.lon, d.lat])+")"})
+   .style("fill", function(d){
+                    if (d.sum == "") {return "white";}
+                    else {return "steelblue"} })
+   .on('mouseover', tip.show)
+   .on('mouseout', tip.hide)
+   .on('click', function(d) {
+    if (d.sum > 0) { return createDetailVis(d);}});
       //console.log(dataSet[690150].lat);
 })
 
@@ -132,10 +179,41 @@ function clicked(d) {
 }
 
 // ALL THESE FUNCTIONS are just a RECOMMENDATION !!!!
-var createDetailVis = function(){
+var createDetailVis = function(d){
+data = [];
+data.push(d); 
+xScaleDetail.domain([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23])
+yScaleDetail.domain([0, d3.max(dataArray.map(function(d){return d.sum}))])
 
-}
+detailVis.append("g").attr("class", "x axis")
+          .attr("transform","translate(0," + 200+")")
+          .call(xAxis);
 
+detailVis.append("g").attr("class","y axis")
+          .call(yAxis)
+          .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 10)
+          .attr("dy", ".71em")
+          .style("text-anchor","end")
+          .text("Solar Radiation in Wh/m^2");
+
+detailVis.selectAll(".bar")
+          .data(data)
+          .enter()
+          .append("rect")
+          .attr("class", "bar")
+          .attr("x", function(e,i){for (i=0;i<24;i++) {console.log(d); return xScaleDetail(i);}})
+          .attr("width", xScaleDetail.rangeBand())
+          .attr("y", function(e,i){return yScaleDetail(e.hourly[i]);})
+          .attr("height", function(e,i) {console.log(e.hourly); return bbVis.h - yScaleDetail(e.hourly[i]); })
+     };
+
+// var createDetailVis = function(d,i) {
+// data = [];
+// data.push(d); 
+// data.forEach(function(d){console.log(d.hourly);});
+// }
 
 var updateDetailVis = function(data, name){
   
