@@ -10,8 +10,8 @@ var margin = {
     left: 50
 };
 
-var width = 800 - margin.left - margin.right;
-var height = 800 - margin.bottom - margin.top;
+var width = 900 - margin.left - margin.right;
+var height = 900 - margin.bottom - margin.top;
 
 var bbVis = {
     x: 100,
@@ -20,20 +20,20 @@ var bbVis = {
     h: 300
 };
 
-bbDetail = {
+var bbDetail = {
     x: 800,
-    y: 100,
-    w: 500,
-    h: 200
+    y: 200,
+    w: 800,
+    h: 300
 };
 
 var detailVis = d3.select("#detailVis").append("svg").attr({
-    width:500,
-    height:300
+    width:800,
+    height:400
 }).append("g")
           .attr("class","detail")
           .attr("height",bbVis.h)
-          .attr("transform","translate(70,50)")
+          .attr("transform","translate(70,20)")
 
 
 
@@ -66,7 +66,7 @@ var loadStats;
 
 
 //function loadStations() {
-    d3.csv("../data/stations.csv",function(error,data){
+    d3.csv("stations.csv",function(error,data){
         data.forEach(function(d,i){
           if (i==1) {console.log(d);};
           dataSet[d.USAF] = {"lat": +d.ISH_LAT, "lon": +d.ISH_LON, "sum": "", "hourly":{}, "station": d.STATION, "state":d.ST};
@@ -78,7 +78,7 @@ var loadStats;
 var loadMap;
 //loadStations(console.log(stations));
 function loadStats() {
-    d3.json("../data/reducedMonthStationHour2003_2004.json", function(error,data){
+    d3.json("reducedMonthStationHour2003_2004.json", function(error,data){
        $.each(data, function(index, value){
         stations.push(index);
        });
@@ -96,7 +96,7 @@ var dataArray = [];
 var clickedCity;
 
 function createVis() {
-d3.json("../data/us-named.json", function(error, data) {
+d3.json("us-named.json", function(error, data) {
 
     var usMap = topojson.feature(data,data.objects.states).features
    // console.log(usMap);
@@ -182,11 +182,15 @@ function clicked(d) {
 var createDetailVis = function(d){
 data = [];
 data.push(d); 
+hourlyData = [];
+data.forEach(function(d,i){ for (i=0; i<24; i++) {hourlyData.push(d.hourly[i]);}});
+
+
 xScaleDetail.domain([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23])
-yScaleDetail.domain([0, d3.max(dataArray.map(function(d){return d.sum}))])
+yScaleDetail.domain([0, d3.max(hourlyData.map(function(d){return d}))])
 
 detailVis.append("g").attr("class", "x axis")
-          .attr("transform","translate(0," + 200+")")
+          .attr("transform","translate(0, 292)")
           .call(xAxis);
 
 detailVis.append("g").attr("class","y axis")
@@ -199,21 +203,16 @@ detailVis.append("g").attr("class","y axis")
           .text("Solar Radiation in Wh/m^2");
 
 detailVis.selectAll(".bar")
-          .data(data)
+          .data(hourlyData)
           .enter()
           .append("rect")
           .attr("class", "bar")
-          .attr("x", function(e,i){for (i=0;i<24;i++) {console.log(d); return xScaleDetail(i);}})
+	  .attr("transform","translate(0, -10)")
+        .attr("x", function(e,i) { return xScaleDetail(i);})
           .attr("width", xScaleDetail.rangeBand())
-          .attr("y", function(e,i){return yScaleDetail(e.hourly[i]);})
-          .attr("height", function(e,i) {console.log(e.hourly); return bbVis.h - yScaleDetail(e.hourly[i]); })
+          .attr("y", function(e,i){return yScaleDetail(e);})
+        .attr("height", function(e,i) { return bbVis.h - yScaleDetail(e); });
      };
-
-// var createDetailVis = function(d,i) {
-// data = [];
-// data.push(d); 
-// data.forEach(function(d){console.log(d.hourly);});
-// }
 
 var updateDetailVis = function(data, name){
   
