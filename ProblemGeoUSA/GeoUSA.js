@@ -65,8 +65,10 @@ var stations = [];
 var loadStats;
 
 
+var click = 0;
+
 //function loadStations() {
-    d3.csv("stations.csv",function(error,data){
+    d3.csv("../data/stations.csv",function(error,data){
         data.forEach(function(d,i){
           if (i==1) {console.log(d);};
           dataSet[d.USAF] = {"lat": +d.ISH_LAT, "lon": +d.ISH_LON, "sum": "", "hourly":{}, "station": d.STATION, "state":d.ST};
@@ -78,7 +80,7 @@ var loadStats;
 var loadMap;
 //loadStations(console.log(stations));
 function loadStats() {
-    d3.json("reducedMonthStationHour2003_2004.json", function(error,data){
+    d3.json("../data/reducedMonthStationHour2003_2004.json", function(error,data){
        $.each(data, function(index, value){
         stations.push(index);
        });
@@ -95,8 +97,10 @@ var dataArray = [];
 
 var clickedCity;
 
+var clickCount = 1;
+
 function createVis() {
-d3.json("us-named.json", function(error, data) {
+d3.json("../data/us-named.json", function(error, data) {
 
     var usMap = topojson.feature(data,data.objects.states).features
    // console.log(usMap);
@@ -113,7 +117,7 @@ d3.json("us-named.json", function(error, data) {
           //};
       })
 
-var radiusScale = d3.scale.linear().range([0,6]).domain([0, d3.max(dataArray.map(function(d){return d.sum;}))]);
+var radiusScale = d3.scale.linear().range([0,10]).domain([0, d3.max(dataArray.map(function(d){return d.sum;}))]);
 
 function toTitleCase(str)
 {
@@ -142,16 +146,23 @@ svg.selectAll(".dot")
    .attr("transform", function(d){return "translate(" + projection([d.lon, d.lat])+")"})
    .style("fill", function(d){
                     if (d.sum == "") {return "white";}
-                    else {return "steelblue"} })
+                    else {return "orange"} })
+   .style("stroke-width", ".5px")
+   .attr("stroke", "white")
    .on('mouseover', tip.show)
    .on('mouseout', tip.hide)
    .on('click', function(d) {
-    if (d.sum > 0) { return createDetailVis(d);}});
+    if (d.sum > 0 && click == 0) { 
+      return createDetailVis(d);}
+      else {
+        return redraw(d);}
+    });
       //console.log(dataSet[690150].lat);
 })
 
 };
 
+ 
 //zooming function
 function clicked(d) {
   var x, y, k;
@@ -180,6 +191,10 @@ function clicked(d) {
 
 // ALL THESE FUNCTIONS are just a RECOMMENDATION !!!!
 var createDetailVis = function(d){
+
+  detailVis.selectAll(".bar").remove();
+  detailVis.select(".y.axis").remove();
+
 data = [];
 data.push(d); 
 hourlyData = [];
@@ -190,7 +205,7 @@ xScaleDetail.domain([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,
 yScaleDetail.domain([0, d3.max(hourlyData.map(function(d){return d}))])
 
 detailVis.append("g").attr("class", "x axis")
-          .attr("transform","translate(0, 292)")
+          .attr("transform","translate(0, 290)")
           .call(xAxis);
 
 detailVis.append("g").attr("class","y axis")
@@ -212,11 +227,49 @@ detailVis.selectAll(".bar")
           .attr("width", xScaleDetail.rangeBand())
           .attr("y", function(e,i){return yScaleDetail(e);})
         .attr("height", function(e,i) { return bbVis.h - yScaleDetail(e); });
-     };
 
-var updateDetailVis = function(data, name){
+click = 1;
+console.log(click);
+};
+
+var redraw = function(d){
+
+
+  data = [];
+data.push(d); 
+hourlyData = [];
+data.forEach(function(d,i){ for (i=0; i<24; i++) {hourlyData.push(d.hourly[i]);}});
+
+
+  detailVis.selectAll(".bar").remove();
+  detailVis.select(".y.axis").remove();
+  detailVis.select(".x.axis").remove();
   
-}
+
+  detailVis.append("g").attr("class","y axis")
+          .call(yAxis)
+          .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 10)
+          .attr("dy", ".71em")
+          .style("text-anchor","end")
+          .text("Solar Radiation in Wh/m^2");
+
+detailVis.selectAll(".bar")
+          .data(hourlyData)
+          .enter()
+          .append("rect")
+          .attr("class", "bar")
+    .attr("transform","translate(0, -10)")
+        .attr("x", function(e,i) { return xScaleDetail(i);})
+          .attr("width", xScaleDetail.rangeBand())
+          .attr("y", function(e,i){return yScaleDetail(e);})
+        .attr("height", function(e,i) { return bbVis.h - yScaleDetail(e); });
+
+
+click = 0;
+console.log(click);
+};
 
 
 
